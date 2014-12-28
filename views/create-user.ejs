@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>ユーザー作成</title>
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+  </head>
+  <body>
+   <form action="/auth/user" method="post">
+    <div>
+        <label>ユーザーID：</label>
+        <input type="text" name="username"/>
+    </div>
+    <div>
+        <label>パスワード：</label>
+        <input type="password" name="password"/>
+    </div>
+    <div>
+        <label>姓：</label>
+        <input type="text" name="surname"/>
+    </div>
+    <div>
+        <label>名：</label>
+        <input type="text" name="firstname"/>
+    </div>
+    <div>
+        <input type="submit" value="作成"/>
+    </div>
+</form>
+	<a href="/">トップ</a>
+  </body>
+</html>

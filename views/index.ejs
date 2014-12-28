@@ -5,7 +5,13 @@
     <link rel='stylesheet' href='/stylesheets/style.css' />
   </head>
   <body>
+   <div id="message"><%= message %></div>
+    <div>認証状態[<%= authStatus %>]</div>
     <h1><%= title %></h1>
     <p>Welcome to <%= title %></p>
+    <a href="/auth/login">ログイン画面</a>
+    <a href="/auth/logout">ログアウト</a>
+    <a href="/auth/users">ユーザー一覧</a>
+    <a href="/auth/create-user">ユーザー登録</a>
   </body>
 </html>

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>ユーザー情報</title>
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+  </head>
+  <body>
+   <form action="/auth/updateUser" method="post">
+  <input type="hidden" name="username" value="<%= username %>"/>
+    <div>
+        <label>ユーザーID：</label>
+        <span><%= username %></span>
+    </div>
+    <div>
+        <label>姓：</label>
+        <input type="input" name="surname" value="<%= surname %>"/>
+    </div>
+    <div>
+        <label>名：</label>
+        <input type="input" name="firstname" value="<%= firstname %>"/>
+    </div>
+    <div>
+        <input type="submit" value="更新"/>
+    </div>
+</form>
+	<a href="/">トップ</a>
+  </body>
+</html>
