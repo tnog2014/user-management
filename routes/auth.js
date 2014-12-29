@@ -99,14 +99,40 @@ router.get('/logout', function(req, res){
   res.redirect('/');
 });
 
+function isValid(req, res, validUser){
+	// 認証されていなければfalseを返す。
+	if(!req.isAuthenticated()){
+		return false;
+	}
+	// 実行可能ユーザーが指定されている場合には、
+	// ログインユーザーと一致する場合にはtrueを返す。それ以外の場合には、falseを返す。
+	if(validUser){
+		var loginUser = req.user.username;
+		return validUser === loginUser;
+	}
+	if(req.getRole() === "admin") {
+		return true;
+	}
+	return false;
+}
+
 // ユーザー登録画面表示
 router.get('/create-user', function(req, res) {
+	if(!isValid(req, res)){
+		res.message("エラーが発生しました。", "error");
+		return res.redirect('/');
+	}
 	res.render('create-user', { title: 'Express', message : '' });
 });
 
 // ユーザー情報画面表示
 router.get('/user/:username', function(req, res) {
 	var username = req.params.username;
+	if(!isValid(req, res, username)){
+		res.message("エラーが発生しました。", "error");
+		return res.redirect('/');
+	}
+
 	console.log(":username="+username);
 	User.findOne({ username: username }, function(err, user) {
 		if (err) { return done(err); }
@@ -126,6 +152,10 @@ router.get('/user/:username', function(req, res) {
 
 // ユーザー削除処理
 router.get('/delete/:username', function(req, res) {
+	if(!isValid(req, res)){
+		res.message("エラーが発生しました。", "error");
+		return res.redirect('/');
+	}
 	var username = req.params.username;
 	if(username){
 		console.log("削除対象[" + username + "]");
@@ -146,6 +176,10 @@ router.get('/delete/:username', function(req, res) {
 
 // ユーザー一覧画面表示
 router.get('/users', function(req, res) {
+	if(!isValid(req, res)){
+		res.message("エラーが発生しました。", "error");
+		return res.redirect('/');
+	}
 	User.find({}, function(err, users0) {
 		var users = [];
 		for (var i = 0; i < users0.length; i++) {
@@ -170,6 +204,10 @@ function toHexDigest(password){
 
 // ユーザ登録処理
 router.post('/user', function(req, res) {
+	if(!isValid(req, res)){
+		res.message("エラーが発生しました。", "error");
+	}
+	return res.redirect('/');
 	var username = req.body.username;
 	var password = req.body.password;
 	console.log("create user:"+username+","+password);
@@ -198,6 +236,10 @@ router.post('/updateUser', function(req, res) {
 	var surname = req.body.surname;
 	var firstname = req.body.firstname;
 	var role = req.body.role;
+	if(!isValid(req, res, username)){
+		res.message("エラーが発生しました。", "error");
+		return res.redirect('/');
+	}
 	console.log('更新ユーザーID['+username+']');
 	console.log("update user:"+username+","+surname+","+firstname);
 	User.find({username:username}, function(err, user0) {

@@ -11,8 +11,14 @@
     <h1><%= title %></h1>
     <p>Welcome to <%= title %></p>
     <a href="/auth/login">ログイン画面</a>
+    <% if(authStatus == true){ %>
     <a href="/auth/logout">ログアウト</a>
+    <% } else { %>
+   <span>ログアウト</span>
+    <% } %>
+    <% if(role == "admin"){ %>
     <a href="/auth/users">ユーザー一覧</a>
     <a href="/auth/create-user">ユーザー登録</a>
+    <% } %>
   </body>
 </html>
