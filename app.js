@@ -27,9 +27,9 @@ app.use(bodyParser.urlencoded());
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use(session({secret: 'secret'})); //express‚Ìsessionƒ~ƒhƒ‹ƒEƒFƒA‚ğ—LŒø‚É‚µ‚Äsecret‚ğİ’è
+app.use(session({secret: 'secret'})); //expressï¿½ï¿½sessionï¿½~ï¿½hï¿½ï¿½ï¿½Eï¿½Fï¿½Aï¿½ï¿½Lï¿½ï¿½É‚ï¿½ï¿½ï¿½secretï¿½ï¿½İ’ï¿½
 app.use(flash());
-app.use(passport.initialize()); //passport‚Ì‰Šú‰»
+app.use(passport.initialize()); //passportï¿½Ìï¿½ï¿½ï¿½
 app.use(passport.session());
 
 
@@ -38,6 +38,7 @@ app.use(messages);
 app.use('/', routes);
 app.use('/users', users);
 app.use('/auth', auth);
+
 
 /// catch 404 and forward to error handler
 app.use(function(req, res, next) {

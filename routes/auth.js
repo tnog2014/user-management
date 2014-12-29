@@ -2,6 +2,17 @@ var express = require('express');
 var crypto = require('crypto');
 var router = express.Router();
 
+// passportのソースを参考にして、reqにロール取得関数を追加。
+var http = require('http')
+, req = http.IncomingMessage.prototype;
+req.getRole = function(){
+	if(this.user){
+		return this.user.role;
+	} else {
+		return "";
+	}
+};
+
 var mongoose = require('mongoose');
 var db = mongoose.connect('mongodb://localhost/users');
 var Schema = mongoose.Schema;
@@ -61,13 +72,13 @@ router.get('/login', function(req, res) {
 // ログイン処理
 router.post('/login',  function(req, res, next){
 	passport.authenticate('local', function(err, user, info) {
-		if (err) { 
+		if (err) {
 			return next(err);
 		}
-		if (!user) { 
+		if (!user) {
 		    res.message("認証に失敗しました。", "error");
-		    return res.redirect('/auth/login'); 
-		} 
+		    return res.redirect('/auth/login');
+		}
 		req.logIn(user, function(err) {
 			if (err) {
 				return next(err);
@@ -78,6 +89,8 @@ router.post('/login',  function(req, res, next){
 		});
 	})(req, res, next);
 });
+
+
 
 // ログアウト処理
 router.get('/logout', function(req, res){
@@ -107,7 +120,7 @@ router.get('/user/:username', function(req, res) {
 			role: user.role
 		};
 		res.render('edit-user', user);
-	});	
+	});
 });
 
 
