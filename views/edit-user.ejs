@@ -5,6 +5,7 @@
     <link rel='stylesheet' href='/stylesheets/style.css' />
   </head>
   <body>
+   <% include messages %>
    <form action="/auth/updateUser" method="post">
   <input type="hidden" name="username" value="<%= username %>"/>
     <div>
@@ -18,6 +19,10 @@
     <div>
         <label>名：</label>
         <input type="input" name="firstname" value="<%= firstname %>"/>
+    </div>
+    <div>
+        <label>ロール：</label>
+        <input type="input" name="role" value="<%= role %>"/>
     </div>
     <div>
         <input type="submit" value="更新"/>

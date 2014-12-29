@@ -5,8 +5,9 @@
     <link rel='stylesheet' href='/stylesheets/style.css' />
   </head>
   <body>
-   <div id="message"><%= message %></div>
+   <% include messages %>
     <div>認証状態[<%= authStatus %>]</div>
+    <div>ロール[<%= role %>]</div>
     <h1><%= title %></h1>
     <p>Welcome to <%= title %></p>
     <a href="/auth/login">ログイン画面</a>

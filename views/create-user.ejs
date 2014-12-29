@@ -5,6 +5,7 @@
     <link rel='stylesheet' href='/stylesheets/style.css' />
   </head>
   <body>
+   <% include messages %>
    <form action="/auth/user" method="post">
     <div>
         <label>ユーザーID：</label>
@@ -21,6 +22,10 @@
     <div>
         <label>名：</label>
         <input type="text" name="firstname"/>
+    </div>
+    <div>
+        <label>ロール：</label>
+        <input type="text" name="role"/>
     </div>
     <div>
         <input type="submit" value="作成"/>

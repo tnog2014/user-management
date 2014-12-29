@@ -1,0 +1,14 @@
+<style>
+	.info {
+		background-color: #eef;
+	}
+	.error {
+		background-color: #fee;
+	}
+</style>
+<% if(locals.messages) { %>
+	<% messages.forEach(function(message){ %>
+		<p class='<%= message.type %>'><%= message.string %></p>
+	<% }) %>
+	<% removeMessages() %>
+<% } %>

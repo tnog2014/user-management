@@ -8,6 +8,8 @@ var flash = require("connect-flash");
 var passport = require('passport');
 var session = require('express-session');
 
+var messages = require('./lib/messages');
+
 var routes = require('./routes/index');
 var users = require('./routes/users');
 var auth = require('./routes/auth');
@@ -29,6 +31,9 @@ app.use(session({secret: 'secret'})); //expressのsessionミドルウェアを有効にして
 app.use(flash());
 app.use(passport.initialize()); //passportの初期化
 app.use(passport.session());
+
+
+app.use(messages);
 
 app.use('/', routes);
 app.use('/users', users);

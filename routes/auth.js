@@ -9,7 +9,8 @@ var Users = new Schema({
    username: String,
    password: String,
    surname: String,
-   firstname: String
+   firstname: String,
+   role: String
    });
 
 mongoose.model('User', Users);
@@ -24,6 +25,7 @@ var passport = require('passport')
 // シリアライズ方法の設定
 passport.serializeUser(function(user, done) {
   console.log("serializeUser");
+  // TODO: パスワードをシリアライズしないようにする。
   console.dir(user);
   done(null, user);
 });
@@ -57,15 +59,30 @@ router.get('/login', function(req, res) {
 });
 
 // ログイン処理
-router.post('/login',
-  passport.authenticate('local', { successRedirect: '/',
-                                   failureRedirect: '/auth/login',
-                                   failureFlash: true })
-);
+router.post('/login',  function(req, res, next){
+	passport.authenticate('local', function(err, user, info) {
+		if (err) { 
+			return next(err);
+		}
+		if (!user) { 
+		    res.message("認証に失敗しました。", "error");
+		    return res.redirect('/auth/login'); 
+		} 
+		req.logIn(user, function(err) {
+			if (err) {
+				return next(err);
+			} else {
+				res.message("ログインしました。", "info");
+				return res.redirect('/');
+			}
+		});
+	})(req, res, next);
+});
 
 // ログアウト処理
 router.get('/logout', function(req, res){
   req.logout();
+  res.message("ログアウトしました。", "info");
   res.redirect('/');
 });
 
@@ -86,7 +103,8 @@ router.get('/user/:username', function(req, res) {
 		var user = {
 			username: username,
 			surname: user.surname,
-			firstname: user.firstname
+			firstname: user.firstname,
+			role: user.role
 		};
 		res.render('edit-user', user);
 	});	
@@ -103,6 +121,7 @@ router.get('/delete/:username', function(req, res) {
 			if (!user) {
 				return done(null, false, { message: '削除に失敗しました。' });
 			} else {
+				res.message("ユーザーを削除しました。", "info");
 				res.redirect('/');
 			}
 		});
@@ -120,7 +139,8 @@ router.get('/users', function(req, res) {
 			users.push({
 				username: users0[i].username,
 				surname: users0[i].surname,
-				firstname: users0[i].firstname
+				firstname: users0[i].firstname,
+				role: users0[i].role
 			});
 		}
 		res.render('user-list', { users: users });
@@ -146,14 +166,17 @@ router.post('/user', function(req, res) {
 	user.password = digest;
 	user.surname = req.body.surname;
 	user.firstname = req.body.firstname;
+	user.role = req.body.role;
 	user.save(function(err){
 		if(err) {
 			console.log(err);
 			throw err;
+		} else {
+			console.log('User saved['+username+']');
+			res.message("新規ユーザー"+username+"を登録しました。", "info");
+			res.redirect('/');
 		}
 	});
-	console.log('User saved['+username+']');
-	res.redirect('/');
 });
 
 // ユーザ情報更新処理
@@ -161,16 +184,28 @@ router.post('/updateUser', function(req, res) {
 	var username = req.body.username;
 	var surname = req.body.surname;
 	var firstname = req.body.firstname;
+	var role = req.body.role;
 	console.log('更新ユーザーID['+username+']');
 	console.log("update user:"+username+","+surname+","+firstname);
-	var modified = {username: username, surname: surname, firstname:firstname};
-	User.findOneAndUpdate({username:username}, modified, function (err, place) {
-	if(err){
-	console.log(err);
-	} else {
-		res.redirect('/');
-	}
-	});	
+	User.find({username:username}, function(err, user0) {
+		if(err){
+			console.log(err);
+			throw err;
+		}
+		var modified = user0;
+		modified.surname = surname;
+		modified.firstname = firstname;
+		modified.role = role;
+		User.findOneAndUpdate({username:username}, modified, function (err2, place) {
+			if(err2){
+				console.log(err2);
+				throw err2;
+			} else {
+				res.message("ユーザー情報を更新しました。", "info");
+				res.redirect('/');
+			}
+		});
+	});
 });
 
 module.exports = router;
