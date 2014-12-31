@@ -204,10 +204,11 @@ function toHexDigest(password){
 
 // ユーザ登録処理
 router.post('/user', function(req, res) {
+console.log("USER CREATE");
 	if(!isValid(req, res)){
 		res.message("エラーが発生しました。", "error");
+		return res.redirect('/');
 	}
-	return res.redirect('/');
 	var username = req.body.username;
 	var password = req.body.password;
 	console.log("create user:"+username+","+password);
