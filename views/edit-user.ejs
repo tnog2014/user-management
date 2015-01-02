@@ -2,32 +2,65 @@
 <html>
   <head>
     <title>ユーザー情報</title>
-    <link rel='stylesheet' href='/stylesheets/style.css' />
+    <% include head %>
+	<script>
+
+    	function cancel(){
+    		location.href='/auth/users'
+    		return false;
+    	}
+
+    	function send(){
+			if (confirm("送信します。よろしいですか？")) {
+				document.form.submit();
+			} else {
+				return false;
+			}
+    	}
+
+		$(function(){
+			$('#cancel').click(cancel);
+			$('#send').click(send);
+		});
+    </script>
   </head>
   <body>
+   <% include navbar %>
    <% include messages %>
-   <form action="/auth/updateUser" method="post">
-  <input type="hidden" name="username" value="<%= username %>"/>
-    <div>
-        <label>ユーザーID：</label>
-        <span><%= username %></span>
+   <div class="container" role="main">
+   <form class="form-horizontal" role="form" action="/auth/updateUser" method="post">
+    <input type="hidden" name="username" value="<%= username %>"/>
+    <div class="form-group">
+        <label for="username" class="col-sm-2">ユーザーID</label>
+        <div class="col-sm-10">
+        <input class="form-control" readonly="readonly" type="input" id="username" name="username" value="<%= username %>"/>
+        </div>
     </div>
-    <div>
-        <label>姓：</label>
-        <input type="input" name="surname" value="<%= surname %>"/>
+    <div class="form-group">
+        <label for="surname" class="col-sm-2">姓</label>
+        <div class="col-sm-10">
+        <input class="form-control" type="input" id="surname" name="surname" value="<%= surname %>"/>
+        </div>
     </div>
-    <div>
-        <label>名：</label>
-        <input type="input" name="firstname" value="<%= firstname %>"/>
+    <div class="form-group">
+        <label for="firstname" class="col-sm-2">名</label>
+        <div class="col-sm-10">
+        <input class="form-control" type="input" id="firstname" name="firstname" value="<%= firstname %>"/>
+        </div>
     </div>
-    <div>
-        <label>ロール：</label>
-        <input type="input" name="role" value="<%= role %>"/>
+    <div class="form-group">
+        <label for="role" class="col-sm-2">ロール</label>
+        <div class="col-sm-10">
+        <input class="form-control" type="input" id="role" name="role" value="<%= role %>"/>
+        </div>
     </div>
-    <div>
-        <input type="submit" value="更新"/>
+    <div class="form-group">
+    <div class="col-sm-offset-2 col-sm-10">
+    	<button id="cancel" class="btn btn-default">キャンセル</button>
+        <button id="send" class="btn btn-default" >更新</button>
     </div>
-</form>
-	<a href="/">トップ</a>
+    </div>
+    </form>
+	</div>
   </body>
 </html>

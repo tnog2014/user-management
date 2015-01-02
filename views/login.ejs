@@ -2,23 +2,40 @@
 <html>
   <head>
     <title>ログイン</title>
-    <link rel='stylesheet' href='/stylesheets/style.css' />
+    <% include head %>
+    <script>
+    	function login(){
+			document.form.submit();
+    	}
+
+		$(function(){
+			$('#login').click(login);
+		});
+    </script>
   </head>
   <body>
-   <% include messages %>
-   <form action="/auth/login" method="post">
-    <div>
-        <label>ユーザーID：</label>
-        <input type="text" name="username"/>
+    <% include navbar %>
+    <% include messages %>
+    <div class="container" role="main">
+    <form class="form-horizontal" role="form" action="/auth/login" method="post">
+	    <div class="form-group">
+	        <label for="username" class="col-sm-2">ユーザーID</label>
+	        <div class="col-sm-10">
+	        	<input class="form-control" type="text" id="username" name="username" placeholder="ユーザーIDを入力して下さい。"/>
+	        </div>
+	    </div>
+	    <div class="form-group">
+	        <label for="password" class="col-sm-2">パスワード</label>
+	        <div class="col-sm-10">
+	        	<input class="form-control" type="password" id="password" name="password" placeholder="パスワードを入力して下さい。"/>
+	        </div>
+	    </div>
+	    <div class="form-group">
+	    <div class="col-sm-offset-2 col-sm-10">
+	    	<button id="login" class="btn btn-default">ログイン</button>
+	    </div>
+	    </div>
     </div>
-    <div>
-        <label>パスワード：</label>
-        <input type="password" name="password"/>
-    </div>
-    <div>
-        <input type="submit" value="ログイン"/>
-    </div>
-</form>
-	<a href="/">トップ</a>
+    </form>
   </body>
 </html>

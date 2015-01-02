@@ -66,7 +66,7 @@ passport.use(new LocalStrategy(
 
 // ログイン画面表示
 router.get('/login', function(req, res) {
-  res.render('login', { title: 'Express', message : '' });
+  res.render('login', getNavbarInfo(req, res));
 });
 
 // ログイン処理
@@ -104,14 +104,16 @@ function isValid(req, res, validUser){
 	if(!req.isAuthenticated()){
 		return false;
 	}
+	// 管理者ロールの場合には、trueを返す。
+	if(req.getRole() === "admin") {
+		return true;
+	}
 	// 実行可能ユーザーが指定されている場合には、
 	// ログインユーザーと一致する場合にはtrueを返す。それ以外の場合には、falseを返す。
 	if(validUser){
 		var loginUser = req.user.username;
+		console.log("ログインユーザー, 編集対象ユーザー:["+loginUser+"]["+validUser+"]");
 		return validUser === loginUser;
-	}
-	if(req.getRole() === "admin") {
-		return true;
 	}
 	return false;
 }
@@ -122,12 +124,14 @@ router.get('/create-user', function(req, res) {
 		res.message("エラーが発生しました。", "error");
 		return res.redirect('/');
 	}
-	res.render('create-user', { title: 'Express', message : '' });
+	var map = getNavbarInfo(req, res);
+	res.render('create-user', map);
 });
 
 // ユーザー情報画面表示
 router.get('/user/:username', function(req, res) {
 	var username = req.params.username;
+	console.log("username["+username+"]");
 	if(!isValid(req, res, username)){
 		res.message("エラーが発生しました。", "error");
 		return res.redirect('/');
@@ -139,13 +143,14 @@ router.get('/user/:username', function(req, res) {
 		if (!user) {
 			return done(null, false, { message: 'ユーザーIDが間違っています。' });
 		}
-		var user = {
-			username: username,
-			surname: user.surname,
-			firstname: user.firstname,
-			role: user.role
-		};
-		res.render('edit-user', user);
+
+		var map = getNavbarInfo(req, res);
+		map.username = username;
+		map.surname = user.surname;
+		map.firstname = user.firstname;
+		map.role = user.role;
+		console.dir(map);
+		res.render('edit-user', map);
 	});
 });
 
@@ -190,7 +195,9 @@ router.get('/users', function(req, res) {
 				role: users0[i].role
 			});
 		}
-		res.render('user-list', { users: users });
+		var map = getNavbarInfo(req, res);
+		map.users = users;
+		res.render('user-list', map);
 	});
 });
 
@@ -210,6 +217,13 @@ console.log("USER CREATE");
 		return res.redirect('/');
 	}
 	var username = req.body.username;
+
+	// TODO: 正式なデータチェックロジックを実装する。
+	console.log("登録：ユーザーID["+username+"]");
+	if(!username){
+		res.message("ユーザーIDを入力して下さい。", "error");
+		return res.redirect('/auth/create-user');
+	}
 	var password = req.body.password;
 	console.log("create user:"+username+","+password);
 	var digest = toHexDigest(password);
@@ -263,5 +277,28 @@ router.post('/updateUser', function(req, res) {
 		});
 	});
 });
+
+
+function getNavbarInfo(req, res){
+	var username = "";
+	var fullname = "";
+	if(req.user){
+		username = req.user.username;
+		fullname = "（"+req.user.surname+ " "+req.user.firstname+"）";
+	}
+	var ret = {
+		title: 'Express',
+		header: {
+			username: username,
+			fullname: fullname,
+			authStatus: req.isAuthenticated(),
+			role: req.getRole()
+		}
+	};
+	console.log("====================");
+	console.dir(ret);
+	console.log("====================");
+	return ret;
+}
 
 module.exports = router;

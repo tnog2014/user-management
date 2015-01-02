@@ -2,16 +2,31 @@
 <html>
   <head>
     <title>ユーザーリスト</title>
-    <link rel='stylesheet' href='/stylesheets/style.css' />
-    <script>
-    function edit(index){
-    	
-    }
+    <% include head %>
+	<script>
+    	function back(){
+			location.href="/";
+    	}
+
+		$(function(){
+			$('#back').click(back);
+		});
     </script>
   </head>
   <body>
+    <% include navbar %>
 	<% include messages %>
-	<table border="1">
+	<div class="container" role="main">
+	<table class="um-user-list table">
+		<tr>
+    		<th>No.</th>
+    		<th>ID</th>
+    		<th>姓</th>
+    		<th>名前</th>
+    		<th>ロール</th>
+    		<th></th>
+    		<th></th>
+    	</tr>
     <% for (var i = 0;i < users.length;i++){ %>
 		<tr>
 			<td><%= i + 1 %></td>
@@ -24,7 +39,9 @@
 		</tr>
 	<% } %>
 	</table>
-	<a href="/">トップ</a>
-    <a href="/auth/create-user">ユーザー登録</a>
+    <div>
+	  	<button id="back" class="btn btn-default">戻る</button>
+	</div>
+	</div>
   </body>
 </html>

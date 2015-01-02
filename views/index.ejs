@@ -2,23 +2,14 @@
 <html>
   <head>
     <title><%= title %></title>
-    <link rel='stylesheet' href='/stylesheets/style.css' />
+    <% include head %>
   </head>
-  <body>
-   <% include messages %>
-    <div>認証状態[<%= authStatus %>]</div>
-    <div>ロール[<%= role %>]</div>
+  <body role="document">
+    <% include navbar %>
+    <div class="container" role="main">
+    <% include messages %>
     <h1><%= title %></h1>
     <p>Welcome to <%= title %></p>
-    <a href="/auth/login">ログイン画面</a>
-    <% if(authStatus == true){ %>
-    <a href="/auth/logout">ログアウト</a>
-    <% } else { %>
-   <span>ログアウト</span>
-    <% } %>
-    <% if(role == "admin"){ %>
-    <a href="/auth/users">ユーザー一覧</a>
-    <a href="/auth/create-user">ユーザー登録</a>
-    <% } %>
+    </div>
   </body>
 </html>
