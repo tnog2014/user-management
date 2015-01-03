@@ -21,15 +21,15 @@ app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
 app.use(favicon());
-app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded());
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(logger('dev'));
 
-app.use(session({secret: 'secret'})); //express��session�~�h���E�F�A��L��ɂ���secret��ݒ�
+app.use(session({secret: 'secret'}));
 app.use(flash());
-app.use(passport.initialize()); //passport�̏���
+app.use(passport.initialize());
 app.use(passport.session());
 
 
@@ -70,31 +70,7 @@ app.use(function(err, req, res, next) {
         error: {}
     });
 });
-/*
-var mongoose = require('mongoose');
-var db = mongoose.connect('mongodb://localhost/users');
-var Schema = mongoose.Schema;
-var Users = new Schema({
-   username: String,
-   password: String
-   });
-mongoose.model('User',Users);
 
-var User = mongoose.model('User');
-
-var user = new User();
-	user.username = 'user01';
-	user.password='passwd';
-	user.save(function(err){
-	if(err) {
-		console.log(err);
-		throw err;
-	}
-	console.log('User saved');
-});
-*/
-/*
 //mongoose.disconnect();
-*/
 
 module.exports = app;

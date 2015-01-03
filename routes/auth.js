@@ -7,9 +7,9 @@ var http = require('http')
 , req = http.IncomingMessage.prototype;
 req.getRole = function(){
 	if(this.user){
-		return this.user.role;
+		return this.user.roles;
 	} else {
-		return "";
+		return [];
 	}
 };
 
@@ -17,17 +17,25 @@ var mongoose = require('mongoose');
 var db = mongoose.connect('mongodb://localhost/users');
 var Schema = mongoose.Schema;
 var Users = new Schema({
-   username: String,
+   username: {type: String, unique: true},
    password: String,
    surname: String,
    firstname: String,
-   role: String
+   roles: [String]
    });
 
 mongoose.model('User', Users);
 
+// ロール定義
+var roles = [
+	{id:"role1", desc:"ロール１"},
+	{id:"role2", desc:"ロール２"},
+	{id:"admin", desc:"管理者"}
+];
 
 var User = mongoose.model('User');
+
+
 
 // 認証設定
 var passport = require('passport')
@@ -35,16 +43,16 @@ var passport = require('passport')
 
 // シリアライズ方法の設定
 passport.serializeUser(function(user, done) {
-  console.log("serializeUser");
+  // console.log("serializeUser");
   // TODO: パスワードをシリアライズしないようにする。
-  console.dir(user);
+  //console.dir(user);
   done(null, user);
 });
 
 // デシリアライズ方法の設定
 passport.deserializeUser(function(user, done) {
-  console.log("deserializeUser");
-  console.dir(user);
+ // console.log("deserializeUser");
+ // console.dir(user);
   done(null, user);
 });
 
@@ -76,14 +84,14 @@ router.post('/login',  function(req, res, next){
 			return next(err);
 		}
 		if (!user) {
-		    res.message("認証に失敗しました。", "error");
+		    res.message("認証に失敗しました。", "alert-danger");
 		    return res.redirect('/auth/login');
 		}
 		req.logIn(user, function(err) {
 			if (err) {
 				return next(err);
 			} else {
-				res.message("ログインしました。", "info");
+				res.message("ログインしました。", "alert-success");
 				return res.redirect('/');
 			}
 		});
@@ -95,7 +103,7 @@ router.post('/login',  function(req, res, next){
 // ログアウト処理
 router.get('/logout', function(req, res){
   req.logout();
-  res.message("ログアウトしました。", "info");
+  res.message("ログアウトしました。", "alert-success");
   res.redirect('/');
 });
 
@@ -104,9 +112,15 @@ function isValid(req, res, validUser){
 	if(!req.isAuthenticated()){
 		return false;
 	}
-	// 管理者ロールの場合には、trueを返す。
-	if(req.getRole() === "admin") {
-		return true;
+	// 管理者ロールの場合には、trueを返す
+	// TODO: テーブルに基づくロール・権限。
+	var rs = req.getRole();
+	// TODO: 一時的にすべてOK
+	return true;
+	for(var i = 0; i < rs.length; i++) {
+		if(rs[i] === "admin") {
+			return true;
+		}
 	}
 	// 実行可能ユーザーが指定されている場合には、
 	// ログインユーザーと一致する場合にはtrueを返す。それ以外の場合には、falseを返す。
@@ -121,10 +135,11 @@ function isValid(req, res, validUser){
 // ユーザー登録画面表示
 router.get('/create-user', function(req, res) {
 	if(!isValid(req, res)){
-		res.message("エラーが発生しました。", "error");
+		res.message("エラーが発生しました。", "alert-danger");
 		return res.redirect('/');
 	}
 	var map = getNavbarInfo(req, res);
+	map.roles = roles;
 	res.render('create-user', map);
 });
 
@@ -133,7 +148,7 @@ router.get('/user/:username', function(req, res) {
 	var username = req.params.username;
 	console.log("username["+username+"]");
 	if(!isValid(req, res, username)){
-		res.message("エラーが発生しました。", "error");
+		res.message("エラーが発生しました。", "alert-danger");
 		return res.redirect('/');
 	}
 
@@ -148,17 +163,32 @@ router.get('/user/:username', function(req, res) {
 		map.username = username;
 		map.surname = user.surname;
 		map.firstname = user.firstname;
-		map.role = user.role;
-		console.dir(map);
+		var extendedRoles = []
+		for(var i=0; i< roles.length;i++){
+			var item = {};
+			item.id = roles[i].id;
+			item.desc = roles[i].desc;
+			item.checked = contains(user.roles, roles[i].id);
+			extendedRoles.push(item);
+		}
+		map.roles = extendedRoles;
 		res.render('edit-user', map);
 	});
 });
 
+function contains(array, value){
+	for(var i = 0; i < array.length; i++){
+		if(array[i] === value){
+			return true;
+		}
+	}
+	return false;
+}
 
 // ユーザー削除処理
 router.get('/delete/:username', function(req, res) {
 	if(!isValid(req, res)){
-		res.message("エラーが発生しました。", "error");
+		res.message("エラーが発生しました。", "alert-danger");
 		return res.redirect('/');
 	}
 	var username = req.params.username;
@@ -169,7 +199,7 @@ router.get('/delete/:username', function(req, res) {
 			if (!user) {
 				return done(null, false, { message: '削除に失敗しました。' });
 			} else {
-				res.message("ユーザーを削除しました。", "info");
+				res.message("ユーザーを削除しました。", "alert-success");
 				res.redirect('/');
 			}
 		});
@@ -182,7 +212,7 @@ router.get('/delete/:username', function(req, res) {
 // ユーザー一覧画面表示
 router.get('/users', function(req, res) {
 	if(!isValid(req, res)){
-		res.message("エラーが発生しました。", "error");
+		res.message("エラーが発生しました。", "alert-danger");
 		return res.redirect('/');
 	}
 	User.find({}, function(err, users0) {
@@ -192,7 +222,7 @@ router.get('/users', function(req, res) {
 				username: users0[i].username,
 				surname: users0[i].surname,
 				firstname: users0[i].firstname,
-				role: users0[i].role
+				roles: users0[i].roles
 			});
 		}
 		var map = getNavbarInfo(req, res);
@@ -213,7 +243,7 @@ function toHexDigest(password){
 router.post('/user', function(req, res) {
 console.log("USER CREATE");
 	if(!isValid(req, res)){
-		res.message("エラーが発生しました。", "error");
+		res.message("エラーが発生しました。", "alert-danger");
 		return res.redirect('/');
 	}
 	var username = req.body.username;
@@ -221,7 +251,7 @@ console.log("USER CREATE");
 	// TODO: 正式なデータチェックロジックを実装する。
 	console.log("登録：ユーザーID["+username+"]");
 	if(!username){
-		res.message("ユーザーIDを入力して下さい。", "error");
+		res.message("ユーザーIDを入力して下さい。", "alert-warning");
 		return res.redirect('/auth/create-user');
 	}
 	var password = req.body.password;
@@ -232,14 +262,14 @@ console.log("USER CREATE");
 	user.password = digest;
 	user.surname = req.body.surname;
 	user.firstname = req.body.firstname;
-	user.role = req.body.role;
+	user.roles = req.body.roles;
 	user.save(function(err){
 		if(err) {
 			console.log(err);
 			throw err;
 		} else {
 			console.log('User saved['+username+']');
-			res.message("新規ユーザー"+username+"を登録しました。", "info");
+			res.message("新規ユーザー"+username+"を登録しました。", "alert-success");
 			res.redirect('/');
 		}
 	});
@@ -250,28 +280,30 @@ router.post('/updateUser', function(req, res) {
 	var username = req.body.username;
 	var surname = req.body.surname;
 	var firstname = req.body.firstname;
-	var role = req.body.role;
+	var roles = req.body.roles;
 	if(!isValid(req, res, username)){
-		res.message("エラーが発生しました。", "error");
+		res.message("エラーが発生しました。", "alert-danger");
 		return res.redirect('/');
 	}
 	console.log('更新ユーザーID['+username+']');
 	console.log("update user:"+username+","+surname+","+firstname);
-	User.find({username:username}, function(err, user0) {
+	User.findOne({ username: username }, function(err, modified) {
 		if(err){
 			console.log(err);
 			throw err;
 		}
-		var modified = user0;
+		if(modified === null){
+			res.message("ユーザー情報の更新に失敗しました。", "alert-danger");
+			return res.redirect('/');
+		}
 		modified.surname = surname;
 		modified.firstname = firstname;
-		modified.role = role;
-		User.findOneAndUpdate({username:username}, modified, function (err2, place) {
-			if(err2){
+		modified.roles = roles;
+		modified.save(function(err2){
+			if (err2) {
 				console.log(err2);
-				throw err2;
 			} else {
-				res.message("ユーザー情報を更新しました。", "info");
+				res.message("ユーザー情報を更新しました。", "alert-success");
 				res.redirect('/');
 			}
 		});
@@ -286,13 +318,22 @@ function getNavbarInfo(req, res){
 		username = req.user.username;
 		fullname = "（"+req.user.surname+ " "+req.user.firstname+"）";
 	}
+
+	var roles = req.getRole();
+	var authen = {};
+	for(var i = 0; i < roles.length;i++){
+		if(roles[i] === "admin"){
+			authen["user-manage"] = true;
+		}
+	}
 	var ret = {
 		title: 'Express',
 		header: {
 			username: username,
 			fullname: fullname,
 			authStatus: req.isAuthenticated(),
-			role: req.getRole()
+			roles: req.getRole(),
+			authen: authen
 		}
 	};
 	console.log("====================");

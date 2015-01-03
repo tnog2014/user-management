@@ -17,7 +17,8 @@
       <p class="navbar-text navbar-left" style="color:white">
       <%= header.username %>&nbsp;<%= header.fullname %>&nbsp;
     認証状態[<%= header.authStatus %>]&nbsp;
-    ロール[<%= header.role %>]
+    ロール[<%= header.roles %>]
+    認可[<%= header.authen %>]
     </p>
     </div>
     <!-- Collect the nav links, forms, and other content for toggling -->
@@ -38,7 +39,7 @@
             <p class="navbar-text">ログアウト</p>
           </li>
           <% } %>
-          <% if(header.role == "admin"){ %>
+          <% if(header.authen["user-manage"]){ %>
           <li class="dropdown">
             <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">ユーザー管理<span class="caret"></span></a>
             <ul class="dropdown-menu" role="menu">

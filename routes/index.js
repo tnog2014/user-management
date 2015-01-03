@@ -8,18 +8,26 @@ function getNavbarInfo(req, res){
 		username = req.user.username;
 		fullname = "（"+req.user.surname+ " "+req.user.firstname+"）";
 	}
+
+	var roles = req.getRole();
+	var authen = {};
+	for(var i = 0; i < roles.length;i++){
+		if(roles[i] === "admin"){
+			authen["user-manage"] = true;
+		}
+	}
 	var ret = {
 		title: 'Express',
-		header:{
+		header: {
 			username: username,
 			fullname: fullname,
 			authStatus: req.isAuthenticated(),
-			role: req.getRole()
+			roles: req.getRole(),
+			authen: authen
 		}
 	};
 	return ret;
 }
-
 /* GET home page. */
 router.get('/', function(req, res) {
 	console.log("認証状態:"+req.isAuthenticated());
