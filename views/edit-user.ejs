@@ -54,6 +54,7 @@
         <% for (var i = 0;i < roles.length;i++){ %>
                 <input type="checkbox" id="<%= roles[i].id %>" name="roles[]" value="<%= roles[i].id %>"
                 <% if(roles[i].checked) { %>checked = 'checked'<% } %>
+                <% if(!header.authen["update-user"]) { %>disabled = 'disabled'<% } %>
                 /><label for="<%= roles[i].id %>"><%= roles[i].desc %></label><br>
         <% } %>
         </div>

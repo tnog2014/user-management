@@ -16,15 +16,19 @@
       </ul>
       <p class="navbar-text navbar-left" style="color:white">
       <%= header.username %>&nbsp;<%= header.fullname %>&nbsp;
-    認証状態[<%= header.authStatus %>]&nbsp;
+    認証状態[<%= header.authen["logged-in"] %>]&nbsp;
     ロール[<%= header.roles %>]
-    認可[<%= header.authen %>]
     </p>
     </div>
     <!-- Collect the nav links, forms, and other content for toggling -->
     <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
       <ul class="nav navbar-nav navbar-right">
-          <% if(header.authStatus == true){ %>
+          <% if(header.authen["logged-in"]){ %>
+          <li>
+            <a href="/auth/user/<%= header.username %>">ユーザー情報</a>
+          </li>
+          <% } %>
+          <% if(header.authen["logged-in"]){ %>
           <li>
             <p class="navbar-text">ログイン</p>
           </li>
@@ -39,12 +43,16 @@
             <p class="navbar-text">ログアウト</p>
           </li>
           <% } %>
-          <% if(header.authen["user-manage"]){ %>
+          <% if(header.authen["list-user"] || header.authen["create-user"]){ %>
           <li class="dropdown">
             <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">ユーザー管理<span class="caret"></span></a>
             <ul class="dropdown-menu" role="menu">
+              <% if(header.authen["list-user"]){ %>
               <li><a href="/auth/users">ユーザー一覧</a></li>
+              <% } %>
+              <% if(header.authen["create-user"]){ %>
               <li><a href="/auth/create-user">ユーザー登録</a></li>
+              <% } %>
             </ul>
           </li>
           <% } %>

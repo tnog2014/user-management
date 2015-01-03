@@ -1,21 +1,11 @@
 var express = require('express');
 var crypto = require('crypto');
 var router = express.Router();
-
-// passportのソースを参考にして、reqにロール取得関数を追加。
-var http = require('http')
-, req = http.IncomingMessage.prototype;
-req.getRole = function(){
-	if(this.user){
-		return this.user.roles;
-	} else {
-		return [];
-	}
-};
-
+var um_utils = require('../lib/um_utils');
 var mongoose = require('mongoose');
 var db = mongoose.connect('mongodb://localhost/users');
 var Schema = mongoose.Schema;
+
 var Users = new Schema({
    username: {type: String, unique: true},
    password: String,
@@ -26,16 +16,7 @@ var Users = new Schema({
 
 mongoose.model('User', Users);
 
-// ロール定義
-var roles = [
-	{id:"role1", desc:"ロール１"},
-	{id:"role2", desc:"ロール２"},
-	{id:"admin", desc:"管理者"}
-];
-
 var User = mongoose.model('User');
-
-
 
 // 認証設定
 var passport = require('passport')
@@ -45,7 +26,7 @@ var passport = require('passport')
 passport.serializeUser(function(user, done) {
   // console.log("serializeUser");
   // TODO: パスワードをシリアライズしないようにする。
-  //console.dir(user);
+  // console.dir(user);
   done(null, user);
 });
 
@@ -74,7 +55,7 @@ passport.use(new LocalStrategy(
 
 // ログイン画面表示
 router.get('/login', function(req, res) {
-  res.render('login', getNavbarInfo(req, res));
+  res.render('login', um_utils.getNavbarInfo(req, res));
 });
 
 // ログイン処理
@@ -98,8 +79,6 @@ router.post('/login',  function(req, res, next){
 	})(req, res, next);
 });
 
-
-
 // ログアウト処理
 router.get('/logout', function(req, res){
   req.logout();
@@ -107,39 +86,16 @@ router.get('/logout', function(req, res){
   res.redirect('/');
 });
 
-function isValid(req, res, validUser){
-	// 認証されていなければfalseを返す。
-	if(!req.isAuthenticated()){
-		return false;
-	}
-	// 管理者ロールの場合には、trueを返す
-	// TODO: テーブルに基づくロール・権限。
-	var rs = req.getRole();
-	// TODO: 一時的にすべてOK
-	return true;
-	for(var i = 0; i < rs.length; i++) {
-		if(rs[i] === "admin") {
-			return true;
-		}
-	}
-	// 実行可能ユーザーが指定されている場合には、
-	// ログインユーザーと一致する場合にはtrueを返す。それ以外の場合には、falseを返す。
-	if(validUser){
-		var loginUser = req.user.username;
-		console.log("ログインユーザー, 編集対象ユーザー:["+loginUser+"]["+validUser+"]");
-		return validUser === loginUser;
-	}
-	return false;
-}
-
 // ユーザー登録画面表示
 router.get('/create-user', function(req, res) {
-	if(!isValid(req, res)){
-		res.message("エラーが発生しました。", "alert-danger");
+	if(um_utils.isNotAuthorized(req, "create-user")){
+		res.message("ユーザー登録の権限がありません。", "alert-danger");
 		return res.redirect('/');
 	}
-	var map = getNavbarInfo(req, res);
-	map.roles = roles;
+	var map = um_utils.getNavbarInfo(req, res);
+
+	// 設定可能なロールの配列データを追加。
+	map.roles = um_utils.getDefinedRoleArray();
 	res.render('create-user', map);
 });
 
@@ -147,8 +103,9 @@ router.get('/create-user', function(req, res) {
 router.get('/user/:username', function(req, res) {
 	var username = req.params.username;
 	console.log("username["+username+"]");
-	if(!isValid(req, res, username)){
-		res.message("エラーが発生しました。", "alert-danger");
+	if(um_utils.isNotAuthorized(req, "update-user")
+			&& username !== um_utils.getLoginUser(req)){
+		res.message("ユーザー情報表示の権限がありません。", "alert-danger");
 		return res.redirect('/');
 	}
 
@@ -159,17 +116,24 @@ router.get('/user/:username', function(req, res) {
 			return done(null, false, { message: 'ユーザーIDが間違っています。' });
 		}
 
-		var map = getNavbarInfo(req, res);
+		var map = um_utils.getNavbarInfo(req, res);
 		map.username = username;
 		map.surname = user.surname;
 		map.firstname = user.firstname;
+
+		// ユーザーがもつロールか否かという情報を追加したロール配列を作成。
+		// "update-user"権限を持たない場合には、自分が保持するロール以外は表示しない。
 		var extendedRoles = []
+		var roles = um_utils.getDefinedRoleArray();
 		for(var i=0; i< roles.length;i++){
 			var item = {};
+			var checked = contains(user.roles, roles[i].id);
 			item.id = roles[i].id;
 			item.desc = roles[i].desc;
-			item.checked = contains(user.roles, roles[i].id);
-			extendedRoles.push(item);
+			item.checked = checked;
+			if(checked || um_utils.isAuthorized(req, "update-user")){
+				extendedRoles.push(item);
+			}
 		}
 		map.roles = extendedRoles;
 		res.render('edit-user', map);
@@ -187,8 +151,8 @@ function contains(array, value){
 
 // ユーザー削除処理
 router.get('/delete/:username', function(req, res) {
-	if(!isValid(req, res)){
-		res.message("エラーが発生しました。", "alert-danger");
+	if(um_utils.isNotAuthorized(req, "delete-user")){
+		res.message("ユーザー削除の権限がありません。", "alert-danger");
 		return res.redirect('/');
 	}
 	var username = req.params.username;
@@ -199,7 +163,7 @@ router.get('/delete/:username', function(req, res) {
 			if (!user) {
 				return done(null, false, { message: '削除に失敗しました。' });
 			} else {
-				res.message("ユーザーを削除しました。", "alert-success");
+				res.message("ユーザー " + username + " を削除しました。", "alert-success");
 				res.redirect('/');
 			}
 		});
@@ -211,8 +175,8 @@ router.get('/delete/:username', function(req, res) {
 
 // ユーザー一覧画面表示
 router.get('/users', function(req, res) {
-	if(!isValid(req, res)){
-		res.message("エラーが発生しました。", "alert-danger");
+	if(um_utils.isNotAuthorized(req, "list-user")){
+		res.message("ユーザー一覧表示の権限がありません。", "alert-danger");
 		return res.redirect('/');
 	}
 	User.find({}, function(err, users0) {
@@ -225,7 +189,7 @@ router.get('/users', function(req, res) {
 				roles: users0[i].roles
 			});
 		}
-		var map = getNavbarInfo(req, res);
+		var map = um_utils.getNavbarInfo(req, res);
 		map.users = users;
 		res.render('user-list', map);
 	});
@@ -242,8 +206,8 @@ function toHexDigest(password){
 // ユーザ登録処理
 router.post('/user', function(req, res) {
 console.log("USER CREATE");
-	if(!isValid(req, res)){
-		res.message("エラーが発生しました。", "alert-danger");
+	if(um_utils.isNotAuthorized(req, "create-user")){
+		res.message("ユーザー登録の権限がありません。", "alert-danger");
 		return res.redirect('/');
 	}
 	var username = req.body.username;
@@ -281,8 +245,10 @@ router.post('/updateUser', function(req, res) {
 	var surname = req.body.surname;
 	var firstname = req.body.firstname;
 	var roles = req.body.roles;
-	if(!isValid(req, res, username)){
-		res.message("エラーが発生しました。", "alert-danger");
+	// ユーザー更新権限がなく、かつ、変更対象ユーザーが自分自身でない場合には、エラーとする。
+	if(um_utils.isNotAuthorized(req, "update-user")
+			&& username !== um_utils.getLoginUser(req)){
+		res.message("ユーザー情報更新の権限がありません。", "alert-danger");
 		return res.redirect('/');
 	}
 	console.log('更新ユーザーID['+username+']');
@@ -298,48 +264,19 @@ router.post('/updateUser', function(req, res) {
 		}
 		modified.surname = surname;
 		modified.firstname = firstname;
-		modified.roles = roles;
+		// "update-user"権限がある場合のみロールを更新する。
+		if(um_utils.isAuthorized(req, "update-user")){
+			modified.roles = roles;
+		}
 		modified.save(function(err2){
 			if (err2) {
 				console.log(err2);
 			} else {
-				res.message("ユーザー情報を更新しました。", "alert-success");
+				res.message(username + "のユーザー情報を更新しました。", "alert-success");
 				res.redirect('/');
 			}
 		});
 	});
 });
-
-
-function getNavbarInfo(req, res){
-	var username = "";
-	var fullname = "";
-	if(req.user){
-		username = req.user.username;
-		fullname = "（"+req.user.surname+ " "+req.user.firstname+"）";
-	}
-
-	var roles = req.getRole();
-	var authen = {};
-	for(var i = 0; i < roles.length;i++){
-		if(roles[i] === "admin"){
-			authen["user-manage"] = true;
-		}
-	}
-	var ret = {
-		title: 'Express',
-		header: {
-			username: username,
-			fullname: fullname,
-			authStatus: req.isAuthenticated(),
-			roles: req.getRole(),
-			authen: authen
-		}
-	};
-	console.log("====================");
-	console.dir(ret);
-	console.log("====================");
-	return ret;
-}
 
 module.exports = router;
