@@ -2,27 +2,23 @@
   <div class="container-fluid">
     <!-- Brand and toggle get grouped for better mobile display -->
     <div class="navbar-header">
-      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+      <a class="navbar-brand" href="#">Brand</a>
+    </div>
+    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
         <span class="sr-only">Toggle navigation</span>
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <a class="navbar-brand" href="#">Brand</a>
-      <ul class="nav navbar-nav navbar-left">
-      <li>
-        <a href="/">トップ</a>
-      </li>
-      </ul>
-      <p class="navbar-text navbar-left" style="color:white">
-      <%= header.username %>&nbsp;<%= header.fullname %>&nbsp;
-    認証状態[<%= header.authen["logged-in"] %>]&nbsp;
-    ロール[<%= header.roles %>]
+    <p class="navbar-text navbar-left" style="color:white">
+    <%= header.username %>&nbsp;<%= header.fullname %>&nbsp;
+    <!--認証状態[<%= header.authen["logged-in"] %>]&nbsp;
+    ロール[<%= header.roles %>]>-->
     </p>
-    </div>
     <!-- Collect the nav links, forms, and other content for toggling -->
     <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
       <ul class="nav navbar-nav navbar-right">
+          <li><a href="/">トップ</a></li>
           <% if(header.authen["logged-in"]){ %>
           <li>
             <a href="/auth/user/<%= header.username %>">ユーザー情報</a>
@@ -30,7 +26,7 @@
           <% } %>
           <% if(header.authen["logged-in"]){ %>
           <li>
-            <p class="navbar-text">ログイン</p>
+            <p class="navbar-text" style="padding-left:15px">ログイン</p>
           </li>
           <li>
             <a href="/auth/logout">ログアウト</a>
@@ -40,7 +36,7 @@
             <a href="/auth/login">ログイン</a>
           </li>
           <li>
-            <p class="navbar-text">ログアウト</p>
+            <p class="navbar-text" style="padding-left:15px">ログアウト</p>
           </li>
           <% } %>
           <% if(header.authen["list-user"] || header.authen["create-user"]){ %>

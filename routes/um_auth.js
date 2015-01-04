@@ -1,9 +1,8 @@
 var express = require('express');
-var crypto = require('crypto');
 var router = express.Router();
 var um_utils = require('../lib/um_utils');
 var mongoose = require('mongoose');
-var db = mongoose.connect('mongodb://localhost/users');
+var db = mongoose.connect('mongodb://localhost/um');
 var Schema = mongoose.Schema;
 
 var Users = new Schema({
@@ -18,22 +17,45 @@ mongoose.model('User', Users);
 
 var User = mongoose.model('User');
 
+
+
+function createDefaultAdminUser() {
+	User.find({}, function(err, users) {
+		if(users.length == 0){
+			console.log("デフォルト管理ユーザーを作成します。");
+			var user = new User();
+			user.username = "admin";
+			user.password = um_utils.toHexDigest('nodeapp123');
+			user.surname = "Admin";
+			user.firstname = "Admin";
+			user.roles = [ "admin" ];
+			user.save(function(err){
+				if(err) {
+					console.log("デフォルト管理ユーザーの作成に失敗しました。");
+					console.log(err);
+					throw err;
+				}
+				console.log("デフォルト管理ユーザーの作成に成功しました。");
+			});
+		}
+	});
+}
+
+//デフォルト管理ユーザー作成
+createDefaultAdminUser();
+
 // 認証設定
 var passport = require('passport')
   , LocalStrategy = require('passport-local').Strategy;
 
 // シリアライズ方法の設定
 passport.serializeUser(function(user, done) {
-  // console.log("serializeUser");
-  // TODO: パスワードをシリアライズしないようにする。
-  // console.dir(user);
+  user.password = null; // パスワードをシリアライズしない。
   done(null, user);
 });
 
 // デシリアライズ方法の設定
 passport.deserializeUser(function(user, done) {
- // console.log("deserializeUser");
- // console.dir(user);
   done(null, user);
 });
 
@@ -44,7 +66,7 @@ passport.use(new LocalStrategy(
 			if (!user) {
 				return done(null, false, { message: 'ユーザーIDが間違っています。' });
 			}
-			var digest = toHexDigest(password);
+			var digest = um_utils.toHexDigest(password);
 			if(user.password !== digest){
 				return done(null, false, { message: 'パスワードが間違っています。' });
 			}
@@ -93,23 +115,28 @@ router.get('/create-user', function(req, res) {
 		return res.redirect('/');
 	}
 	var map = um_utils.getNavbarInfo(req, res);
+	map.username = "";
+	map.password = "";
+	map.password_confirm = "";
+	map.surname = "";
+	map.firstname = "";
 
 	// 設定可能なロールの配列データを追加。
-	map.roles = um_utils.getDefinedRoleArray();
+	var definedRoles = um_utils.getDefinedRoleArray();
+	map.roles = definedRoles;
 	res.render('um_create_user', map);
 });
 
 // ユーザー情報画面表示
 router.get('/user/:username', function(req, res) {
 	var username = req.params.username;
-	console.log("username["+username+"]");
+	console.log("ユーザー情報画面表示[" + username + "]");
 	if(um_utils.isNotAuthorized(req, "update-user")
 			&& username !== um_utils.getLoginUser(req)){
 		res.message("ユーザー情報表示の権限がありません。", "alert-danger");
 		return res.redirect('/');
 	}
 
-	console.log(":username="+username);
 	User.findOne({ username: username }, function(err, user) {
 		if (err) { return done(err); }
 		if (!user) {
@@ -123,22 +150,28 @@ router.get('/user/:username', function(req, res) {
 
 		// ユーザーがもつロールか否かという情報を追加したロール配列を作成。
 		// "update-user"権限を持たない場合には、自分が保持するロール以外は表示しない。
-		var extendedRoles = []
-		var roles = um_utils.getDefinedRoleArray();
-		for(var i=0; i< roles.length;i++){
-			var item = {};
-			var checked = contains(user.roles, roles[i].id);
-			item.id = roles[i].id;
-			item.desc = roles[i].desc;
-			item.checked = checked;
-			if(checked || um_utils.isAuthorized(req, "update-user")){
-				extendedRoles.push(item);
-			}
-		}
-		map.roles = extendedRoles;
+
+		var definedRoles = um_utils.getDefinedRoleArray();
+		map.roles = getExtendedRoles(req, definedRoles, user.roles);
 		res.render('um_update_user', map);
 	});
 });
+
+function getExtendedRoles(req, definedRoles, userRoles){
+	var extendedRoles = [];
+	var userRoles = userRoles || [];
+	for(var i=0; i< definedRoles.length;i++){
+		var item = {};
+		var checked = contains(userRoles, definedRoles[i].id);
+		item.id = definedRoles[i].id;
+		item.desc = definedRoles[i].desc;
+		item.checked = checked;
+		if(checked || um_utils.isAuthorized(req, "update-user")){
+			extendedRoles.push(item);
+		}
+	}
+	return extendedRoles;
+}
 
 function contains(array, value){
 	for(var i = 0; i < array.length; i++){
@@ -157,7 +190,7 @@ router.get('/delete/:username', function(req, res) {
 	}
 	var username = req.params.username;
 	if(username){
-		console.log("削除対象[" + username + "]");
+		console.log("ユーザー削除処理[" + username + "]");
 		User.remove({ username: username }, function(err, user) {
 			if (err) { return done(err); }
 			if (!user) {
@@ -179,7 +212,9 @@ router.get('/users', function(req, res) {
 		res.message("ユーザー一覧表示の権限がありません。", "alert-danger");
 		return res.redirect('/');
 	}
-	User.find({}, function(err, users0) {
+
+	// usernameに関して、昇順でソートする。
+	User.find({}, null, {sort: {username: 1}}, function(err, users0) {
 		var users = [];
 		for (var i = 0; i < users0.length; i++) {
 			users.push({
@@ -195,32 +230,35 @@ router.get('/users', function(req, res) {
 	});
 });
 
-// パスワードのハッシュを計算する。
-function toHexDigest(password){
-	var sha256sum = crypto.createHash('sha256');
-	sha256sum.update(password);
-	var digest = sha256sum.digest('hex');
-	return digest;
-}
-
 // ユーザ登録処理
 router.post('/user', function(req, res) {
-console.log("USER CREATE");
+	console.log("ユーザー登録処理");
 	if(um_utils.isNotAuthorized(req, "create-user")){
 		res.message("ユーザー登録の権限がありません。", "alert-danger");
 		return res.redirect('/');
 	}
-	var username = req.body.username;
 
-	// TODO: 正式なデータチェックロジックを実装する。
-	console.log("登録：ユーザーID["+username+"]");
-	if(!username){
-		res.message("ユーザーIDを入力して下さい。", "alert-warning");
-		return res.redirect('/auth/create-user');
+	// データチェック
+	var errorCheck = dataCheck(req.body);
+
+	if(errorCheck["error"]){
+		res.message(errorCheck["message"], "alert-warning");
+
+		var map = um_utils.getNavbarInfo(req, res);
+		map.username = req.body.username;
+		map.password = "";
+		map.password_confirm = "";
+		map.surname = req.body.surname;
+		map.firstname = req.body.firstname;
+
+		// 設定可能なロールの配列データを追加。
+		var definedRoles = um_utils.getDefinedRoleArray();
+		map.roles = getExtendedRoles(req, definedRoles, req.body.roles);
+		return res.render('um_create_user', map);
 	}
+	var username = req.body.username;
 	var password = req.body.password;
-	console.log("create user:"+username+","+password);
-	var digest = toHexDigest(password);
+	var digest = um_utils.toHexDigest(password);
 	var user = new User();
 	user.username = username;
 	user.password = digest;
@@ -232,16 +270,54 @@ console.log("USER CREATE");
 			console.log(err);
 			throw err;
 		} else {
-			console.log('User saved['+username+']');
+			console.log("新規ユーザー"+username+"を登録しました。");
 			res.message("新規ユーザー"+username+"を登録しました。", "alert-success");
 			res.redirect('/');
 		}
 	});
 });
 
+function dataCheck(obj){
+	var items = [];
+	if (!obj.username) {
+		items.push("ユーザーID");
+	}
+	if (!obj.password) {
+		items.push("パスワード");
+	}
+	if (!obj.password_confirm) {
+		items.push("パスワード（確認）");
+	}
+	var message = "";
+	for (var i = 0; i < items.length; i++) {
+		message += items[i];
+		if (i < items.length - 1){
+			message += ", ";
+		}
+	}
+	if(message !== "") {
+		message += "が未入力です。";
+		return {error: true, message: message};
+	}
+	if(obj.password !== obj.password_confirm){
+		return {error: true, message: "パスワードとパスワード（確認）が一致しません。"};
+	}
+	return {error: false};
+}
+
+function dataCheckUpdate(obj){
+	if((obj.password !== "" || obj.password_confirm !== "")
+			&& obj.password !== obj.password_confirm){
+		return {error: true, message: "パスワードとパスワード（確認）が一致しません。"};
+	}
+	return {error: false};
+}
+
 // ユーザ情報更新処理
 router.post('/updateUser', function(req, res) {
+	console.log("ユーザー情報更新処理[" + req.body.username + "]");
 	var username = req.body.username;
+	var password = req.body.password;
 	var surname = req.body.surname;
 	var firstname = req.body.firstname;
 	var roles = req.body.roles;
@@ -251,8 +327,23 @@ router.post('/updateUser', function(req, res) {
 		res.message("ユーザー情報更新の権限がありません。", "alert-danger");
 		return res.redirect('/');
 	}
-	console.log('更新ユーザーID['+username+']');
-	console.log("update user:"+username+","+surname+","+firstname);
+
+	var errorCheck = dataCheckUpdate(req.body);
+	if(errorCheck["error"]){
+		res.message(errorCheck["message"], "alert-warning");
+		var map = um_utils.getNavbarInfo(req, res);
+		map.username = req.body.username;
+		map.password = "";
+		map.password_confirm = "";
+		map.surname = req.body.surname;
+		map.firstname = req.body.firstname;
+
+		// 設定可能なロールの配列データを追加。
+		var definedRoles = um_utils.getDefinedRoleArray();
+		map.roles = getExtendedRoles(req, definedRoles, req.body.roles);
+		return res.render('um_update_user', map);
+	}
+
 	User.findOne({ username: username }, function(err, modified) {
 		if(err){
 			console.log(err);
@@ -264,10 +355,19 @@ router.post('/updateUser', function(req, res) {
 		}
 		modified.surname = surname;
 		modified.firstname = firstname;
+
+		// パスワードが入力されている場合には更新対象とする。
+		if(password !== ""){
+			var digest = um_utils.toHexDigest(password);
+			modified.password = digest;
+		}
 		// "update-user"権限がある場合のみロールを更新する。
 		if(um_utils.isAuthorized(req, "update-user")){
 			modified.roles = roles;
 		}
+
+		// TODO: パスワードが空の場合には、更新しない。
+
 		modified.save(function(err2){
 			if (err2) {
 				console.log(err2);

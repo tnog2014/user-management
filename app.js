@@ -9,9 +9,7 @@ var passport = require('passport');
 var session = require('express-session');
 
 var messages = require('./lib/um_messages');
-
 var routes = require('./routes/um_index');
-//var users = require('./routes/users');
 var auth = require('./routes/um_auth');
 
 var app = express();
@@ -36,7 +34,6 @@ app.use(passport.session());
 app.use(messages);
 
 app.use('/', routes);
-//app.use('/users', users);
 app.use('/auth', auth);
 
 
