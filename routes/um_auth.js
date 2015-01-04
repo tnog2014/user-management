@@ -55,7 +55,7 @@ passport.use(new LocalStrategy(
 
 // ログイン画面表示
 router.get('/login', function(req, res) {
-  res.render('login', um_utils.getNavbarInfo(req, res));
+  res.render('um_login', um_utils.getNavbarInfo(req, res));
 });
 
 // ログイン処理
@@ -96,7 +96,7 @@ router.get('/create-user', function(req, res) {
 
 	// 設定可能なロールの配列データを追加。
 	map.roles = um_utils.getDefinedRoleArray();
-	res.render('create-user', map);
+	res.render('um_create_user', map);
 });
 
 // ユーザー情報画面表示
@@ -136,7 +136,7 @@ router.get('/user/:username', function(req, res) {
 			}
 		}
 		map.roles = extendedRoles;
-		res.render('edit-user', map);
+		res.render('um_update_user', map);
 	});
 });
 
@@ -191,7 +191,7 @@ router.get('/users', function(req, res) {
 		}
 		var map = um_utils.getNavbarInfo(req, res);
 		map.users = users;
-		res.render('user-list', map);
+		res.render('um_user_list', map);
 	});
 });
 

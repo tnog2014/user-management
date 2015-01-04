@@ -2,7 +2,7 @@
 <html>
   <head>
     <title>ユーザー情報</title>
-    <% include head %>
+    <% include um_head %>
 	<script>
 
     	function cancel(){
@@ -25,8 +25,8 @@
     </script>
   </head>
   <body>
-   <% include navbar %>
-   <% include messages %>
+   <% include um_navbar %>
+   <% include um_messages %>
    <div class="container" role="main">
    <form class="form-horizontal" role="form" action="/auth/updateUser" method="post">
     <div class="form-group">

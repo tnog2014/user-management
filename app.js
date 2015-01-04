@@ -8,11 +8,11 @@ var flash = require("connect-flash");
 var passport = require('passport');
 var session = require('express-session');
 
-var messages = require('./lib/messages');
+var messages = require('./lib/um_messages');
 
-var routes = require('./routes/index');
-var users = require('./routes/users');
-var auth = require('./routes/auth');
+var routes = require('./routes/um_index');
+//var users = require('./routes/users');
+var auth = require('./routes/um_auth');
 
 var app = express();
 
@@ -36,7 +36,7 @@ app.use(passport.session());
 app.use(messages);
 
 app.use('/', routes);
-app.use('/users', users);
+//app.use('/users', users);
 app.use('/auth', auth);
 
 
@@ -54,7 +54,7 @@ app.use(function(req, res, next) {
 if (app.get('env') === 'development') {
     app.use(function(err, req, res, next) {
         res.status(err.status || 500);
-        res.render('error', {
+        res.render('um_error', {
             message: err.message,
             error: err
         });
@@ -65,7 +65,7 @@ if (app.get('env') === 'development') {
 // no stacktraces leaked to user
 app.use(function(err, req, res, next) {
     res.status(err.status || 500);
-    res.render('error', {
+    res.render('um_error', {
         message: err.message,
         error: {}
     });
