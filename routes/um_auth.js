@@ -17,7 +17,15 @@ mongoose.model('User', Users);
 
 var User = mongoose.model('User');
 
+process.on('SIGINT', function() {
+	console.log("SIGINTが発生したため、mongooseのコネクションを閉じます。");
+	mongoose.disconnect();
+});
 
+process.on('SIGTERM', function() {
+	console.log("SIGTERMが発生したため、mongooseのコネクションを閉じます。");
+	mongoose.disconnect();
+});
 
 function createDefaultAdminUser() {
 	User.find({}, function(err, users) {

@@ -5,7 +5,7 @@
     <% include um_head %>
     <script>
     	function login(){
-			document.form.submit();
+			document.loginform.submit();
     	}
 
 		$(function(){
@@ -17,7 +17,7 @@
     <% include um_navbar %>
     <% include um_messages %>
     <div class="container" role="main">
-    <form class="form-horizontal" role="form" action="/auth/login" method="post">
+    <form class="form-horizontal" role="form" action="/auth/login" name="loginform" method="post">
 	    <div class="form-group">
 	        <label for="username" class="col-sm-3">ユーザーID</label>
 	        <div class="col-sm-9">

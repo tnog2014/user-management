@@ -23,7 +23,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded());
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(logger({ format: 'dev', immediate: true }));
+app.use(logger('dev'));
 
 app.use(session({secret: 'secret'}));
 app.use(flash());
