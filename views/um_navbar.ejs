@@ -26,17 +26,11 @@
           <% } %>
           <% if(header.authen["logged-in"]){ %>
           <li>
-            <p class="navbar-text" style="padding-left:15px">ログイン</p>
-          </li>
-          <li>
             <a href="/auth/logout">ログアウト</a>
           </li>
           <% } else { %>
           <li>
             <a href="/auth/login">ログイン</a>
-          </li>
-          <li>
-            <p class="navbar-text" style="padding-left:15px">ログアウト</p>
           </li>
           <% } %>
           <% if(header.authen["list-user"] || header.authen["create-user"]){ %>

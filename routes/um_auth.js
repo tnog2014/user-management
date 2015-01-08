@@ -20,11 +20,19 @@ var User = mongoose.model('User');
 process.on('SIGINT', function() {
 	console.log("SIGINTが発生したため、mongooseのコネクションを閉じます。");
 	mongoose.disconnect();
+	process.exit(0);
 });
 
 process.on('SIGTERM', function() {
 	console.log("SIGTERMが発生したため、mongooseのコネクションを閉じます。");
 	mongoose.disconnect();
+	process.exit(0);
+});
+
+process.on('uncaughtException', function (err) {
+	console.log("未処理例外が発生しました: " + err);
+	mongoose.disconnect();
+	process.exit(0);
 });
 
 function createDefaultAdminUser() {
@@ -249,19 +257,19 @@ router.post('/user', function(req, res) {
 	// データチェック
 	var errorCheck = dataCheck(req.body);
 
+
+	// 画面再表示用データ作成
+	var map = um_utils.getNavbarInfo(req, res);
+	map.username = req.body.username;
+	map.password = "";
+	map.password_confirm = "";
+	map.surname = req.body.surname;
+	map.firstname = req.body.firstname;
+	var definedRoles = um_utils.getDefinedRoleArray(); // 設定可能なロールの配列データを追加。
+	map.roles = getExtendedRoles(req, definedRoles, req.body.roles);
+	
 	if(errorCheck["error"]){
 		res.message(errorCheck["message"], "alert-warning");
-
-		var map = um_utils.getNavbarInfo(req, res);
-		map.username = req.body.username;
-		map.password = "";
-		map.password_confirm = "";
-		map.surname = req.body.surname;
-		map.firstname = req.body.firstname;
-
-		// 設定可能なロールの配列データを追加。
-		var definedRoles = um_utils.getDefinedRoleArray();
-		map.roles = getExtendedRoles(req, definedRoles, req.body.roles);
 		return res.render('um_create_user', map);
 	}
 	var username = req.body.username;
@@ -275,8 +283,15 @@ router.post('/user', function(req, res) {
 	user.roles = req.body.roles;
 	user.save(function(err){
 		if(err) {
-			console.log(err);
-			throw err;
+			console.dir(err);
+			// mongodbのキー重複エラーの場合には、特定のエラーメッセージを設定する。
+			var mes = "エラーが発生しました。:" + err;
+			if(err.name === 'MongoError' && err.code === 11000){
+				mes = "ユーザーＩＤが重複しています。別なユーザーＩＤを設定してください。";
+			}
+			console.log("mes["+mes+"]");
+			res.message(mes, "alert-danger");			
+			return res.render('um_create_user', map);
 		} else {
 			console.log("新規ユーザー"+username+"を登録しました。");
 			res.message("新規ユーザー"+username+"を登録しました。", "alert-success");
@@ -354,8 +369,9 @@ router.post('/updateUser', function(req, res) {
 
 	User.findOne({ username: username }, function(err, modified) {
 		if(err){
-			console.log(err);
-			throw err;
+			console.dir(err);
+			res.message("ユーザー情報の更新に失敗しました:" + err, "alert-danger");
+			return res.redirect('/');
 		}
 		if(modified === null){
 			res.message("ユーザー情報の更新に失敗しました。", "alert-danger");
